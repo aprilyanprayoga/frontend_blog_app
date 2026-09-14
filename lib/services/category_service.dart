@@ -16,4 +16,17 @@ class CategoryService {
       throw Exception('Gagal mengambil data kategori');
     }
   }
+
+  static Future<void> createCategory(String name) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/categories'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'name': name}),
+    );
+
+    if (response.statusCode != 201) {
+      final body = jsonDecode(response.body);
+      throw Exception(body['message'] ?? 'Gagal menambahkan kategori');
+    }
+  }
 }
