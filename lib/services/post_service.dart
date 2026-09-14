@@ -63,7 +63,7 @@ class PostService {
     final uri = Uri.parse('$baseUrl/posts');
     final request = http.MultipartRequest('POST', uri);
 
-    request.fields['title'] = title;  
+    request.fields['title'] = title;
     request.fields['content'] = content;
     request.fields['category_id'] = categoryId.toString();
 
@@ -102,6 +102,15 @@ class PostService {
     if (response.statusCode != 200) {
       final body = jsonDecode(response.body);
       throw Exception(body['message'] ?? 'Gagal memperbarui artikel');
+    }
+  }
+
+  static Future<void> deletePost(int id) async {
+    final response = await http.delete(Uri.parse('$baseUrl/posts/$id'));
+
+    if (response.statusCode != 200) {
+      final body = jsonDecode(response.body);
+      throw Exception(body['message'] ?? 'Gagal menghapus artikel');
     }
   }
 }

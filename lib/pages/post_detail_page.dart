@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/post_model.dart';
+import '../services/post_service.dart';
 import 'post_form_page.dart';
 
 class PostDetailPage extends StatefulWidget {
@@ -14,6 +15,7 @@ class PostDetailPage extends StatefulWidget {
 class _PostDetailPageState extends State<PostDetailPage> {
   late PostModel post;
   bool _hasChanges = false;
+  bool _isDeleting = false;
 
   @override
   void initState() {
@@ -47,6 +49,45 @@ class _PostDetailPageState extends State<PostDetailPage> {
     }
   }
 
+  Future<void> _confirmDelete() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Hapus Artikel?'),
+        content: Text('Artikel "${post.title}" akan dihapus permanen. Yakin?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _isDeleting = true);
+    try {
+      await PostService.deletePost(post.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Artikel berhasil dihapus')),
+      );
+      Navigator.pop(context, true); // balik ke home, tanda ada perubahan (perlu refresh)
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isDeleting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal menghapus: $e'), backgroundColor: Colors.redAccent),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -61,7 +102,18 @@ class _PostDetailPageState extends State<PostDetailPage> {
           IconButton(
             icon: const Icon(Icons.edit_outlined),
             tooltip: 'Edit Artikel',
-            onPressed: _goToEdit,
+            onPressed: _isDeleting ? null : _goToEdit,
+          ),
+          IconButton(
+            icon: _isDeleting
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.redAccent),
+                  )
+                : const Icon(Icons.delete_outline, color: Colors.redAccent),
+            tooltip: 'Hapus Artikel',
+            onPressed: _isDeleting ? null : _confirmDelete,
           ),
         ],
       ),
