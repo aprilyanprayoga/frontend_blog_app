@@ -23,27 +23,17 @@ class PostService {
     }
   }
 
-  static Future<void> createPost({
-    required String title,
-    required String content,
-    required int categoryId,
-    File? imageFile, // dipakai kalau bukan web (Android/iOS/desktop)
-    Uint8List? imageBytes, // dipakai kalau web
-    String? imageName, // nama file, dibutuhkan buat MultipartFile.fromBytes
+  static Future<void> _attachImage(
+    http.MultipartRequest request, {
+    File? imageFile,
+    Uint8List? imageBytes,
+    String? imageName,
   }) async {
-    final uri = Uri.parse('$baseUrl/posts');
-    final request = http.MultipartRequest('POST', uri);
-
-    request.fields['title'] = title;
-    request.fields['content'] = content;
-    request.fields['category_id'] = categoryId.toString();
-
     if (kIsWeb) {
-      // Web: dart:io File tidak tersedia, jadi pakai bytes yang sudah dibaca di UI
       if (imageBytes != null) {
         final name = imageName ?? 'upload.jpg';
         final ext = name.split('.').last.toLowerCase();
-        final subtype = ext == 'jpg' ? 'jpeg' : ext; // png/jpeg/webp
+        final subtype = ext == 'jpg' ? 'jpeg' : ext;
         request.files.add(
           http.MultipartFile.fromBytes(
             'thumbnail',
@@ -54,13 +44,30 @@ class PostService {
         );
       }
     } else {
-      // Mobile/desktop: pakai path file asli
       if (imageFile != null) {
         request.files.add(
           await http.MultipartFile.fromPath('thumbnail', imageFile.path),
         );
       }
     }
+  }
+
+  static Future<void> createPost({
+    required String title,
+    required String content,
+    required int categoryId,
+    File? imageFile,
+    Uint8List? imageBytes,
+    String? imageName,
+  }) async {
+    final uri = Uri.parse('$baseUrl/posts');
+    final request = http.MultipartRequest('POST', uri);
+
+    request.fields['title'] = title;  
+    request.fields['content'] = content;
+    request.fields['category_id'] = categoryId.toString();
+
+    await _attachImage(request, imageFile: imageFile, imageBytes: imageBytes, imageName: imageName);
 
     final streamedResponse = await request.send();
     final response = await http.Response.fromStream(streamedResponse);
@@ -68,6 +75,33 @@ class PostService {
     if (response.statusCode != 201) {
       final body = jsonDecode(response.body);
       throw Exception(body['message'] ?? 'Gagal membuat artikel');
+    }
+  }
+
+  static Future<void> updatePost({
+    required int id,
+    required String title,
+    required String content,
+    required int categoryId,
+    File? imageFile, // null = thumbnail lama dipertahankan
+    Uint8List? imageBytes,
+    String? imageName,
+  }) async {
+    final uri = Uri.parse('$baseUrl/posts/$id');
+    final request = http.MultipartRequest('PUT', uri);
+
+    request.fields['title'] = title;
+    request.fields['content'] = content;
+    request.fields['category_id'] = categoryId.toString();
+
+    await _attachImage(request, imageFile: imageFile, imageBytes: imageBytes, imageName: imageName);
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode != 200) {
+      final body = jsonDecode(response.body);
+      throw Exception(body['message'] ?? 'Gagal memperbarui artikel');
     }
   }
 }

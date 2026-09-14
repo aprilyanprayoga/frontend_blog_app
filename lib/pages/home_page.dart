@@ -89,13 +89,16 @@ class _HomePageState extends State<HomePage> {
                         : const Icon(Icons.image_not_supported, size: 40),
                     title: Text(post.title),
                     subtitle: Text(post.categoryName ?? '-'),
-                    onTap: () {
-                      Navigator.push(
+                    onTap: () async {
+                      final changed = await Navigator.push<bool>(
                         context,
                         MaterialPageRoute(
                           builder: (context) => PostDetailPage(post: post),
                         ),
                       );
+                      if (changed == true) {
+                        _refreshPosts();
+                      }
                     },
                   ),
                 );

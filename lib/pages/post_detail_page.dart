@@ -1,10 +1,25 @@
 import 'package:flutter/material.dart';
 import '../models/post_model.dart';
+import 'post_form_page.dart';
 
-class PostDetailPage extends StatelessWidget {
+class PostDetailPage extends StatefulWidget {
   final PostModel post;
 
   const PostDetailPage({super.key, required this.post});
+
+  @override
+  State<PostDetailPage> createState() => _PostDetailPageState();
+}
+
+class _PostDetailPageState extends State<PostDetailPage> {
+  late PostModel post;
+  bool _hasChanges = false;
+
+  @override
+  void initState() {
+    super.initState();
+    post = widget.post;
+  }
 
   String _formatDate(String isoDate) {
     try {
@@ -19,11 +34,36 @@ class PostDetailPage extends StatelessWidget {
     }
   }
 
+  Future<void> _goToEdit() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => PostFormPage(existingPost: post)),
+    );
+    if (result is PostModel && mounted) {
+      setState(() {
+        post = result;
+        _hasChanges = true;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) Navigator.pop(context, _hasChanges);
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: const Text('Detail Artikel'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit_outlined),
+            tooltip: 'Edit Artikel',
+            onPressed: _goToEdit,
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -69,6 +109,7 @@ class PostDetailPage extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

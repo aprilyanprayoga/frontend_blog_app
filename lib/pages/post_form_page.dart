@@ -4,11 +4,14 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/category_model.dart';
+import '../models/post_model.dart';
 import '../services/category_service.dart';
 import '../services/post_service.dart';
 
 class PostFormPage extends StatefulWidget {
-  const PostFormPage({super.key});
+  final PostModel? existingPost; // null = mode tambah, ada isi = mode edit
+
+  const PostFormPage({super.key, this.existingPost});
 
   @override
   State<PostFormPage> createState() => _PostFormPageState();
@@ -28,11 +31,19 @@ class _PostFormPageState extends State<PostFormPage> {
 
   bool get _hasImage =>
       kIsWeb ? _selectedImageBytes != null : _selectedImage != null;
+  bool get _isEdit => widget.existingPost != null;
 
   @override
   void initState() {
     super.initState();
     _futureCategories = CategoryService.getAllCategories();
+
+    final existing = widget.existingPost;
+    if (existing != null) {
+      _titleController.text = existing.title;
+      _contentController.text = existing.content;
+      _selectedCategoryId = existing.categoryId;
+    }
   }
 
   @override
@@ -130,18 +141,53 @@ class _PostFormPageState extends State<PostFormPage> {
     setState(() => _isSubmitting = true);
 
     try {
-      await PostService.createPost(
-        title: _titleController.text,
-        content: _contentController.text,
-        categoryId: _selectedCategoryId!,
-        imageFile: _selectedImage,
-        imageBytes: _selectedImageBytes,
-        imageName: _selectedImageName,
-      );
+      if (_isEdit) {
+        await PostService.updatePost(
+          id: widget.existingPost!.id,
+          title: _titleController.text,
+          content: _contentController.text,
+          categoryId: _selectedCategoryId!,
+          imageFile: _selectedImage,
+          imageBytes: _selectedImageBytes,
+          imageName: _selectedImageName,
+        );
+        if (!mounted) return;
+        _showSnack('Artikel berhasil diperbarui!');
 
-      if (!mounted) return;
-      _showSnack('Artikel berhasil dibuat!');
-      Navigator.pop(context, true); // true = tanda ada perubahan, home perlu refresh
+        final categories = await _futureCategories;
+        final categoryName = categories
+            .firstWhere((c) => c.id == _selectedCategoryId,
+                orElse: () => categories.first)
+            .name;
+
+        final updated = PostModel(
+          id: widget.existingPost!.id,
+          title: _titleController.text,
+          slug: widget.existingPost!.slug,
+          content: _contentController.text,
+          thumbnail: widget.existingPost!.thumbnail, // thumbnail baru butuh refetch, dipertahankan dulu
+          categoryId: _selectedCategoryId!,
+          categoryName: categoryName,
+          createdAt: widget.existingPost!.createdAt,
+          updatedAt: DateTime.now().toIso8601String(),
+        );
+
+        if (!mounted) return;
+        Navigator.pop(context, updated); // balik ke detail page, bawa data baru
+        return;
+      } else {
+        await PostService.createPost(
+          title: _titleController.text,
+          content: _contentController.text,
+          categoryId: _selectedCategoryId!,
+          imageFile: _selectedImage,
+          imageBytes: _selectedImageBytes,
+          imageName: _selectedImageName,
+        );
+        if (!mounted) return;
+        _showSnack('Artikel berhasil dibuat!');
+        Navigator.pop(context, true);
+      }
     } catch (e) {
       if (!mounted) return;
       _showSnack('Gagal: $e', isError: true);
@@ -155,7 +201,7 @@ class _PostFormPageState extends State<PostFormPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Tulis Artikel'),
+        title: Text(_isEdit ? 'Edit Artikel' : 'Tulis Artikel'),
       ),
       body: Padding(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
@@ -174,7 +220,12 @@ class _PostFormPageState extends State<PostFormPage> {
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: Colors.grey[300]!),
                     image: !_hasImage
-                        ? null
+                        ? (_isEdit && widget.existingPost!.thumbnail != null
+                            ? DecorationImage(
+                                image: NetworkImage(widget.existingPost!.thumbnail!),
+                                fit: BoxFit.cover,
+                              )
+                            : null)
                         : (kIsWeb
                             ? DecorationImage(
                                 image: MemoryImage(_selectedImageBytes!),
@@ -185,7 +236,7 @@ class _PostFormPageState extends State<PostFormPage> {
                                 fit: BoxFit.cover,
                               )),
                   ),
-                  child: !_hasImage
+                  child: !_hasImage && !(_isEdit && widget.existingPost!.thumbnail != null)
                       ? Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -305,9 +356,9 @@ class _PostFormPageState extends State<PostFormPage> {
                             strokeWidth: 2.5,
                           ),
                         )
-                      : const Text(
-                          'Simpan Artikel',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      : Text(
+                          _isEdit ? 'Simpan Perubahan' : 'Simpan Artikel',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                         ),
                 ),
               ),
