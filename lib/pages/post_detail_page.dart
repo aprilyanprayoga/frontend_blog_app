@@ -6,6 +6,19 @@ class PostDetailPage extends StatelessWidget {
 
   const PostDetailPage({super.key, required this.post});
 
+  String _formatDate(String isoDate) {
+    try {
+      final date = DateTime.parse(isoDate);
+      const months = [
+        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+      ];
+      return '${date.day} ${months[date.month - 1]} ${date.year}';
+    } catch (e) {
+      return isoDate;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -46,7 +59,7 @@ class PostDetailPage extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              post.updatedAt,
+              _formatDate(post.updatedAt),
               style: TextStyle(color: Colors.grey[600], fontSize: 12),
             ),
             const SizedBox(height: 16),

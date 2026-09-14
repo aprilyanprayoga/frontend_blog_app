@@ -1,10 +1,14 @@
 import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import '../models/post_model.dart';
 
 class PostService {
-  // Untuk Chrome/web & desktop, pakai localhost biasa
-  // Kalau nanti pindah ke emulator Android, ganti ke 10.0.2.2
+  // Untuk Android emulator wajib pakai 10.0.2.2, bukan localhost
+  // Untuk Chrome/web, ganti ke http://localhost:3000/api
   static const String baseUrl = 'http://localhost:3000/api';
 
   static Future<List<PostModel>> getAllPosts() async {
@@ -16,6 +20,54 @@ class PostService {
       return data.map((json) => PostModel.fromJson(json)).toList();
     } else {
       throw Exception('Gagal mengambil data artikel');
+    }
+  }
+
+  static Future<void> createPost({
+    required String title,
+    required String content,
+    required int categoryId,
+    File? imageFile, // dipakai kalau bukan web (Android/iOS/desktop)
+    Uint8List? imageBytes, // dipakai kalau web
+    String? imageName, // nama file, dibutuhkan buat MultipartFile.fromBytes
+  }) async {
+    final uri = Uri.parse('$baseUrl/posts');
+    final request = http.MultipartRequest('POST', uri);
+
+    request.fields['title'] = title;
+    request.fields['content'] = content;
+    request.fields['category_id'] = categoryId.toString();
+
+    if (kIsWeb) {
+      // Web: dart:io File tidak tersedia, jadi pakai bytes yang sudah dibaca di UI
+      if (imageBytes != null) {
+        final name = imageName ?? 'upload.jpg';
+        final ext = name.split('.').last.toLowerCase();
+        final subtype = ext == 'jpg' ? 'jpeg' : ext; // png/jpeg/webp
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'thumbnail',
+            imageBytes,
+            filename: name,
+            contentType: MediaType('image', subtype),
+          ),
+        );
+      }
+    } else {
+      // Mobile/desktop: pakai path file asli
+      if (imageFile != null) {
+        request.files.add(
+          await http.MultipartFile.fromPath('thumbnail', imageFile.path),
+        );
+      }
+    }
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode != 201) {
+      final body = jsonDecode(response.body);
+      throw Exception(body['message'] ?? 'Gagal membuat artikel');
     }
   }
 }

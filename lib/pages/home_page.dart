@@ -107,13 +107,16 @@ class _HomePageState extends State<HomePage> {
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 80),
         child: FloatingActionButton.extended(
-          onPressed: () {
-            Navigator.push(
+          onPressed: () async {
+            final result = await Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => const PostFormPage(),
               ),
             );
+            if (result == true) {
+              _refreshPosts();
+            }
           },
           backgroundColor: Colors.black,
           foregroundColor: Colors.white,
