@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/category_model.dart';
 import '../services/category_service.dart';
+import '../services/post_service.dart';
 
 class PostFormPage extends StatefulWidget {
   const PostFormPage({super.key});
@@ -17,6 +20,7 @@ class _PostFormPageState extends State<PostFormPage> {
   late Future<List<CategoryModel>> _futureCategories;
   int? _selectedCategoryId;
   bool _isSubmitting = false;
+  File? _selectedImage;
 
   @override
   void initState() {
@@ -29,6 +33,20 @@ class _PostFormPageState extends State<PostFormPage> {
     _titleController.dispose();
     _contentController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
+
+    if (pickedFile != null) {
+      setState(() {
+        _selectedImage = File(pickedFile.path);
+      });
+    }
   }
 
   InputDecoration _inputStyle(String label, {String? hint}) {
@@ -72,31 +90,45 @@ class _PostFormPageState extends State<PostFormPage> {
     );
   }
 
-  void _submitForm() {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-    if (_selectedCategoryId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Pilih kategori terlebih dahulu'),
-          backgroundColor: Colors.grey[900],
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ),
-      );
-      return;
-    }
-
-    // Sementara tampilkan dulu, nanti diganti pemanggilan API create
+  void _showSnack(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Judul: ${_titleController.text}, Kategori ID: $_selectedCategoryId'),
-        backgroundColor: Colors.black,
+        content: Text(message),
+        backgroundColor: isError ? Colors.redAccent : Colors.black,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
+  }
+
+  Future<void> _submitForm() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    if (_selectedCategoryId == null) {
+      _showSnack('Pilih kategori terlebih dahulu', isError: true);
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      await PostService.createPost(
+        title: _titleController.text,
+        content: _contentController.text,
+        categoryId: _selectedCategoryId!,
+        imageFile: _selectedImage,
+      );
+
+      if (!mounted) return;
+      _showSnack('Artikel berhasil dibuat!');
+      Navigator.pop(context, true); // true = tanda ada perubahan, home perlu refresh
+    } catch (e) {
+      if (!mounted) return;
+      _showSnack('Gagal: $e', isError: true);
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   @override
@@ -112,22 +144,47 @@ class _PostFormPageState extends State<PostFormPage> {
           key: _formKey,
           child: ListView(
             children: [
-              // Placeholder area gambar (belum ada logic upload)
-              Container(
-                height: 160,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.grey[300]!, style: BorderStyle.solid),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.add_photo_alternate_outlined, size: 36, color: Colors.grey[500]),
-                    const SizedBox(height: 8),
-                    Text('Tambahkan Gambar', style: TextStyle(color: Colors.grey[600])),
-                  ],
+              // Area pilih gambar
+              GestureDetector(
+                onTap: _pickImage,
+                child: Container(
+                  height: 160,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.grey[300]!),
+                    image: _selectedImage != null
+                        ? DecorationImage(
+                            image: FileImage(_selectedImage!),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                  ),
+                  child: _selectedImage == null
+                      ? Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.add_photo_alternate_outlined,
+                                size: 36, color: Colors.grey[500]),
+                            const SizedBox(height: 8),
+                            Text('Tambahkan Gambar',
+                                style: TextStyle(color: Colors.grey[600])),
+                          ],
+                        )
+                      : Align(
+                          alignment: Alignment.topRight,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: CircleAvatar(
+                              backgroundColor: Colors.black54,
+                              child: IconButton(
+                                icon: const Icon(Icons.close, color: Colors.white, size: 18),
+                                onPressed: () => setState(() => _selectedImage = null),
+                              ),
+                            ),
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(height: 22),

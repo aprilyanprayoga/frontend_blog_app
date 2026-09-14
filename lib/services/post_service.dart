@@ -1,10 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../models/post_model.dart';
 
 class PostService {
-  // Untuk Chrome/web & desktop, pakai localhost biasa
-  // Kalau nanti pindah ke emulator Android, ganti ke 10.0.2.2
+  // Untuk Android emulator wajib pakai 10.0.2.2, bukan localhost
+  // Untuk Chrome/web, ganti ke http://localhost:3000/api
   static const String baseUrl = 'http://localhost:3000/api';
 
   static Future<List<PostModel>> getAllPosts() async {
@@ -16,6 +17,34 @@ class PostService {
       return data.map((json) => PostModel.fromJson(json)).toList();
     } else {
       throw Exception('Gagal mengambil data artikel');
+    }
+  }
+
+  static Future<void> createPost({
+    required String title,
+    required String content,
+    required int categoryId,
+    File? imageFile,
+  }) async {
+    final uri = Uri.parse('$baseUrl/posts');
+    final request = http.MultipartRequest('POST', uri);
+
+    request.fields['title'] = title;
+    request.fields['content'] = content;
+    request.fields['category_id'] = categoryId.toString();
+
+    if (imageFile != null) {
+      request.files.add(
+        await http.MultipartFile.fromPath('thumbnail', imageFile.path),
+      );
+    }
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode != 201) {
+      final body = jsonDecode(response.body);
+      throw Exception(body['message'] ?? 'Gagal membuat artikel');
     }
   }
 }
