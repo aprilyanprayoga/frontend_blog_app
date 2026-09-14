@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/category_model.dart';
 import '../services/category_service.dart';
+import 'category_posts_page.dart';
 
 class CategoryPage extends StatefulWidget {
   const CategoryPage({super.key});
@@ -126,6 +127,18 @@ class _CategoryPageState extends State<CategoryPage> {
                       child: Icon(Icons.label, color: Colors.white, size: 18),
                     ),
                     title: Text(category.name),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CategoryPostsPage(
+                            categoryId: category.id,
+                            categoryName: category.name,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 );
               },
