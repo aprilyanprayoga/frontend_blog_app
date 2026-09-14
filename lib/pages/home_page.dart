@@ -30,7 +30,13 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Blog App'),
+        title: Row(
+          children: [
+            Image.asset('assets/images/artics_blog_app.jpeg', height: 28),
+            const SizedBox(width: 10),
+            const Text('Blog App'),
+          ],
+        ),
       ),
       body: FutureBuilder<List<PostModel>>(
         future: _futurePosts,

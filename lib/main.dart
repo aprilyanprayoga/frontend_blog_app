@@ -14,6 +14,7 @@ class MyApp extends StatelessWidget {
       title: 'Blog App',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
+        fontFamily: 'Roboto',
         primarySwatch: Colors.blue,
       ),
       home: const MainNavigation(),
