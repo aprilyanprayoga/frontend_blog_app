@@ -1,17 +1,58 @@
-# mobile_app
+# Frontend Blog App (Mobile)
 
-A new Flutter project.
+Aplikasi mobile blog dibuat menggunakan Flutter, mengonsumsi REST API dari [backend_blog_app](https://github.com/aprilyanprayoga/backend_blog_app).
 
-## Getting Started
+Project ini dibuat untuk keperluan Uji Level Kompetensi Keahlian (ATS) RPL dan Ujian Kompetensi Keahlian Pemrograman Mobile.
 
-This project is a starting point for a Flutter application.
+## Tech Stack
 
-A few resources to get you started if this is your first Flutter project:
+- **Framework**: Flutter
+- **Bahasa**: Dart
+- **State Management**: setState + FutureBuilder
+- **HTTP Client**: package `http`
+- **Image Picker**: package `image_picker`
+- **Bottom Navigation**: package `google_nav_bar`
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## Struktur Folder
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```
+lib/
+├── models/       # class data (Post, Category)
+├── services/     # fungsi konsumsi REST API
+├── pages/        # halaman-halaman aplikasi
+└── main.dart     # entry point
+```
+
+## Fitur
+
+- Menampilkan daftar artikel dari API
+- Melihat detail artikel
+- Menambah artikel baru (dengan upload gambar ke Cloudinary lewat backend)
+- Mengedit artikel
+- Menghapus artikel
+- Menampilkan & menambah kategori
+- Melihat artikel berdasarkan kategori
+- Navigasi 3 tab: Home, Kategori, Tentang
+
+## Instalasi
+
+1. Clone repository ini
+2. Install dependencies:
+   ```bash
+   flutter pub get
+   ```
+3. Pastikan [backend_blog_app](https://github.com/aprilyanprayoga/backend_blog_app) sudah berjalan di `http://localhost:3000`
+4. Sesuaikan `baseUrl` di `lib/services/post_service.dart` dan `lib/services/category_service.dart`:
+   - Jalankan di Chrome/web → gunakan `http://localhost:3000/api`
+   - Jalankan di Android Emulator → gunakan `http://10.0.2.2:3000/api`
+5. Jalankan aplikasi:
+   ```bash
+   flutter run
+   ```
+
+## Branching
+
+Repository ini menggunakan strategi branching:
+- `master` — versi stabil awal
+- `develop` — kumpulan seluruh fitur yang sudah selesai
+- `feature/*` — pengembangan tiap fitur secara terpisah
