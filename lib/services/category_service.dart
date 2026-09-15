@@ -29,4 +29,13 @@ class CategoryService {
       throw Exception(body['message'] ?? 'Gagal menambahkan kategori');
     }
   }
+
+  static Future<void> deleteCategory(int id) async {
+    final response = await http.delete(Uri.parse('$baseUrl/categories/$id'));
+
+    if (response.statusCode != 200) {
+      final body = jsonDecode(response.body);
+      throw Exception(body['message'] ?? 'Gagal menghapus kategori');
+    }
+  }
 }

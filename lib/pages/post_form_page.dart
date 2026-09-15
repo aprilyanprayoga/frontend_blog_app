@@ -142,7 +142,7 @@ class _PostFormPageState extends State<PostFormPage> {
 
     try {
       if (_isEdit) {
-        await PostService.updatePost(
+        final updated = await PostService.updatePost(
           id: widget.existingPost!.id,
           title: _titleController.text,
           content: _contentController.text,
@@ -154,26 +154,7 @@ class _PostFormPageState extends State<PostFormPage> {
         if (!mounted) return;
         _showSnack('Artikel berhasil diperbarui!');
 
-        final categories = await _futureCategories;
-        final categoryName = categories
-            .firstWhere((c) => c.id == _selectedCategoryId,
-                orElse: () => categories.first)
-            .name;
-
-        final updated = PostModel(
-          id: widget.existingPost!.id,
-          title: _titleController.text,
-          slug: widget.existingPost!.slug,
-          content: _contentController.text,
-          thumbnail: widget.existingPost!.thumbnail, // thumbnail baru butuh refetch, dipertahankan dulu
-          categoryId: _selectedCategoryId!,
-          categoryName: categoryName,
-          createdAt: widget.existingPost!.createdAt,
-          updatedAt: DateTime.now().toIso8601String(),
-        );
-
-        if (!mounted) return;
-        Navigator.pop(context, updated); // balik ke detail page, bawa data baru
+        Navigator.pop(context, updated); // balik ke detail page, bawa data terbaru (thumbnail ikut update)
         return;
       } else {
         await PostService.createPost(

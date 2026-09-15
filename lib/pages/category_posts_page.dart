@@ -32,15 +32,15 @@ class _CategoryPostsPageState extends State<CategoryPostsPage> {
   }
 
   void _refresh() {
-    setState(() => _futurePosts = _loadPosts());
-  }
+    setState(() {
+      _futurePosts = _loadPosts();
+    });
+  } 
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.categoryName),
-      ),
+      appBar: AppBar(title: Text(widget.categoryName)),
       body: FutureBuilder<List<PostModel>>(
         future: _futurePosts,
         builder: (context, snapshot) {
@@ -57,7 +57,10 @@ class _CategoryPostsPageState extends State<CategoryPostsPage> {
                   const SizedBox(height: 8),
                   Text('Gagal memuat data: ${snapshot.error}'),
                   const SizedBox(height: 8),
-                  ElevatedButton(onPressed: _refresh, child: const Text('Coba Lagi')),
+                  ElevatedButton(
+                    onPressed: _refresh,
+                    child: const Text('Coba Lagi'),
+                  ),
                 ],
               ),
             );
@@ -65,7 +68,9 @@ class _CategoryPostsPageState extends State<CategoryPostsPage> {
 
           final posts = snapshot.data ?? [];
           if (posts.isEmpty) {
-            return const Center(child: Text('Belum ada artikel di kategori ini'));
+            return const Center(
+              child: Text('Belum ada artikel di kategori ini'),
+            );
           }
 
           return RefreshIndicator(

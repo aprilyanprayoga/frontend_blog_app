@@ -13,7 +13,7 @@ class AboutPage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.article, size: 80, color: Colors.blueAccent),
+            Icon(Icons.article, size: 80, color: Colors.black),
             SizedBox(height: 16),
             Text(
               'Blog App',
@@ -26,7 +26,8 @@ class AboutPage extends StatelessWidget {
               padding: EdgeInsets.symmetric(horizontal: 32),
               child: Text(
                 'Aplikasi blog sederhana dibuat untuk keperluan '
-                'Uji Level Kompetensi Keahlian (ATS) RPL.',
+                'Uji Level Kompetensi Keahlian (ATS) RPL. '
+                'yoga #kompe',
                 textAlign: TextAlign.center,
               ),
             ),

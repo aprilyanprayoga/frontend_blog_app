@@ -119,26 +119,79 @@ class _CategoryPageState extends State<CategoryPage> {
               itemCount: categories.length,
               itemBuilder: (context, index) {
                 final category = categories[index];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  child: ListTile(
-                    leading: const CircleAvatar(
-                      backgroundColor: Colors.black,
-                      child: Icon(Icons.label, color: Colors.white, size: 18),
+                return Dismissible(
+                  key: ValueKey(category.id),
+                  direction: DismissDirection.endToStart,
+                  background: Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    alignment: Alignment.centerRight,
+                    decoration: BoxDecoration(
+                      color: Colors.redAccent,
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    title: Text(category.name),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => CategoryPostsPage(
-                            categoryId: category.id,
-                            categoryName: category.name,
+                    child: const Icon(Icons.delete_outline, color: Colors.white),
+                  ),
+                  confirmDismiss: (_) async {
+                    return await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Hapus Kategori?'),
+                            content: Text(
+                              'Kategori "${category.name}" akan dihapus. Artikel yang masih pakai kategori ini bisa jadi ikut kepengaruh.',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('Batal'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+                                child: const Text('Hapus'),
+                              ),
+                            ],
                           ),
-                        ),
+                        ) ??
+                        false;
+                  },
+                  onDismissed: (_) async {
+                    try {
+                      await CategoryService.deleteCategory(category.id);
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Kategori berhasil dihapus')),
                       );
-                    },
+                      _refreshCategories();
+                    } catch (e) {
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Gagal menghapus: $e'), backgroundColor: Colors.redAccent),
+                      );
+                      _refreshCategories(); // balikin tampilan karena gagal dihapus di server
+                    }
+                  },
+                  child: Card(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    child: ListTile(
+                      leading: const CircleAvatar(
+                        backgroundColor: Colors.black,
+                        child: Icon(Icons.label, color: Colors.white, size: 18),
+                      ),
+                      title: Text(category.name),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CategoryPostsPage(
+                              categoryId: category.id,
+                              categoryName: category.name,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 );
               },

@@ -27,8 +27,18 @@ class _PostDetailPageState extends State<PostDetailPage> {
     try {
       final date = DateTime.parse(isoDate);
       const months = [
-        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+        'Januari',
+        'Februari',
+        'Maret',
+        'April',
+        'Mei',
+        'Juni',
+        'Juli',
+        'Agustus',
+        'September',
+        'Oktober',
+        'November',
+        'Desember',
       ];
       return '${date.day} ${months[date.month - 1]} ${date.year}';
     } catch (e) {
@@ -75,29 +85,34 @@ class _PostDetailPageState extends State<PostDetailPage> {
     try {
       await PostService.deletePost(post.id);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Artikel berhasil dihapus')),
-      );
-      Navigator.pop(context, true); // balik ke home, tanda ada perubahan (perlu refresh)
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Artikel berhasil dihapus')));
+      Navigator.pop(
+        context,
+        true,
+      ); // balik ke home, tanda ada perubahan (perlu refresh)
     } catch (e) {
       if (!mounted) return;
       setState(() => _isDeleting = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal menghapus: $e'), backgroundColor: Colors.redAccent),
+        SnackBar(
+          content: Text('Gagal menghapus: $e'),
+          backgroundColor: Colors.redAccent,
+        ),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) Navigator.pop(context, _hasChanges);
-      },
-      child: Scaffold(
+    return Scaffold(
       appBar: AppBar(
         title: const Text('Detail Artikel'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context, _hasChanges),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
@@ -109,7 +124,10 @@ class _PostDetailPageState extends State<PostDetailPage> {
                 ? const SizedBox(
                     width: 18,
                     height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.redAccent),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.redAccent,
+                    ),
                   )
                 : const Icon(Icons.delete_outline, color: Colors.redAccent),
             tooltip: 'Hapus Artikel',
@@ -161,7 +179,6 @@ class _PostDetailPageState extends State<PostDetailPage> {
             ),
           ],
         ),
-      ),
       ),
     );
   }

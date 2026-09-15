@@ -78,7 +78,7 @@ class PostService {
     }
   }
 
-  static Future<void> updatePost({
+  static Future<PostModel> updatePost({
     required int id,
     required String title,
     required String content,
@@ -98,11 +98,13 @@ class PostService {
 
     final streamedResponse = await request.send();
     final response = await http.Response.fromStream(streamedResponse);
+    final body = jsonDecode(response.body);
 
     if (response.statusCode != 200) {
-      final body = jsonDecode(response.body);
       throw Exception(body['message'] ?? 'Gagal memperbarui artikel');
     }
+
+    return PostModel.fromJson(body['data']);
   }
 
   static Future<void> deletePost(int id) async {
